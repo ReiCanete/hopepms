@@ -3,12 +3,12 @@
 - M3 (Back-End/Database Engineer) Setups the database of our app.
 - M4 (Rights & Authentication Specialist) - Setups the authentication for the Super Admin, Admin and Users.
 - M5 (QA) - Document how the app works and test how the app works.
-
-- Problems/Challenges Encounter:
+<br>
+ Problems/Challenges Encounter:
 - Codes not showing up in the repository.
 - Syntax errors.
-
-- Up Next:
+<br>
+ Up Next:
 - Add product CRUD service
 - Add price history service
 - Add products page with search, rights gating, delete confirm
