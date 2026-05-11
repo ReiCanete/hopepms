@@ -9,7 +9,7 @@ export default function AuthCallbackPage() {
     const { data: listener } = supabase.auth.onAuthStateChange(async (event, session) => {
       if (event === 'SIGNED_IN' && session) {
         const { data: userRow } = await supabase
-          .from('user').select('record_status').eq('userId', session.user.id).single();
+          .from('app_user').select('record_status').eq('userId', session.user.id).single();
         if (userRow?.record_status === 'ACTIVE') {
           navigate('/products');
         } else {
