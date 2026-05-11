@@ -1,1 +1,5 @@
-<h1>sdasd</h1>
+- [ ] Test 1: Email register → confirmation email received
+- [ ] Test 2: Google register → redirected to /login with not_activated error
+- [ ] Test 3: Login with INACTIVE account → error message shown
+- [ ] Test 4: Login with ACTIVE account → goes to /products
+- [ ] Test 5: Logged-out user visits /products → redirected to /login
