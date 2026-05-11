@@ -11,9 +11,9 @@ export function AuthProvider({ children }) {
     const { data: listener } = supabase.auth.onAuthStateChange(async (event, session) => {
       if (session) {
         const { data: userRow } = await supabase
-          .from('user')
+          .from('app_user')
           .select('record_status, user_type, username, firstName, lastName')
-          .eq('userId', session.user.id)
+          .eq('"userId"', session.user.id)
           .single();
         if (!userRow || userRow.record_status !== 'ACTIVE') {
           await supabase.auth.signOut();

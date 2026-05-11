@@ -12,13 +12,13 @@ export default function AdminPage() {
 
   async function loadUsers() {
     const { data } = await supabase
-      .from('user').select('userId,username,firstName,lastName,user_type,record_status,stamp').order('username');
+      .from('app_user').select('"userId",username,firstName,lastName,user_type,record_status,stamp').order('username');
     setUsers(data || []);
   }
 
   async function loadAudit() {
     const [{ data: ud }, { data: pd }] = await Promise.all([
-      supabase.from('user').select('username,user_type,record_status,stamp').not('stamp','is',null).order('stamp', { ascending:false }).limit(40),
+      supabase.from('app_user').select('username,user_type,record_status,stamp').not('stamp','is',null).order('stamp', { ascending:false }).limit(40),
       supabase.from('product').select('prodCode,description,stamp').not('stamp','is',null).order('stamp', { ascending:false }).limit(40)
     ]);
     const logs = [
@@ -36,7 +36,7 @@ export default function AdminPage() {
     if (user.user_type === 'SUPERADMIN') return;
     const newStatus = user.record_status === 'ACTIVE' ? 'INACTIVE' : 'ACTIVE';
     const stamp = makeStamp(newStatus === 'ACTIVE' ? 'ACTIVATED' : 'DEACTIVATED', currentUser.id);
-    await supabase.from('user').update({ record_status:newStatus, stamp }).eq('userId', user.userId);
+    await supabase.from('app_user').update({ record_status:newStatus, stamp }).eq('"userId"', user.userId);
     await Promise.all([loadUsers(), loadAudit()]);
   }
 
