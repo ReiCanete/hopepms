@@ -6,19 +6,23 @@ export default function AuthCallbackPage() {
   const navigate = useNavigate();
 
   useEffect(() => {
-    const { data: listener } = supabase.auth.onAuthStateChange(async (event, session) => {
-      if (event === 'SIGNED_IN' && session) {
+    supabase.auth.getSession().then(async ({ data: { session } }) => {
+      if (session) {
         const { data: userRow } = await supabase
-          .from('app_user').select('record_status').eq('userId', session.user.id).single();
-        if (userRow?.record_status === 'ACTIVE') {
-          navigate('/products');
-        } else {
+          .from('user')
+          .select('record_status')
+          .eq('userId', session.user.id)
+          .single();
+        if (!userRow || userRow?.record_status !== 'ACTIVE') {
           await supabase.auth.signOut();
           navigate('/login?error=not_activated');
+        } else {
+          navigate('/products');
         }
+      } else {
+        navigate('/login');
       }
     });
-    return () => listener?.subscription?.unsubscribe();
   }, []);
 
   return (
