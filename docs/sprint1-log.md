@@ -1,0 +1,5 @@
+- M1 (Full Stack Developer) setup our repository in order for us to commit our works.
+- M2 (Front-End Developer) Makes the UI for the Log in page, also navigation bar and side bar and authentication callback page for OAuth redirect.
+- M3 (Back-End/Database Engineer) Setups the database of our app.
+- M4 (Rights & Authentication Specialist) - Setups the authentication for the Super Admin, Admin and Users.
+- M5 (QA) - Document how the app works and test how the app works.
