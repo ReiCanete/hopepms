@@ -63,7 +63,7 @@ export default function PriceHistoryPanel({ prodCode }) {
                 const pct = (parseFloat(h.unitPrice) / maxPrice) * 100;
                 return (
                   <div key={i} className="flex-1 flex flex-col items-center group relative">
-                    <div style={{ height: ${Math.max(pct, 8)}% }}
+                    <div style={{ height: '${Math.max(pct, 8)}%' }}
                       className="w-full bg-blue-200 group-hover:bg-blue-500 rounded-t transition-colors" />
                     <div className="absolute bottom-full mb-1 left-1/2 -translate-x-1/2 bg-slate-800 text-white text-xs rounded px-1.5 py-0.5 whitespace-nowrap opacity-0 group-hover:opacity-100 transition-opacity pointer-events-none z-10">
                       ₱{parseFloat(h.unitPrice).toFixed(2)} · {h.effDate}
