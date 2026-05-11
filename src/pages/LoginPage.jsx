@@ -20,7 +20,7 @@ export default function LoginPage() {
     if (error) { setError(error.message); setLoading(false); return; }
     const { data: userRow } = await supabase
       .from('user').select('record_status').eq('userId', data.user.id).single();
-    if (userRow?.record_status !== 'ACTIVE') {
+    if (!userRow || userRow?.record_status !== 'ACTIVE') {
       await supabase.auth.signOut();
       setError('Your account is pending activation by an administrator.');
       setLoading(false);
@@ -33,7 +33,7 @@ export default function LoginPage() {
   async function handleGoogleLogin() {
     await supabase.auth.signInWithOAuth({
       provider: 'google',
-      options: { redirectTo: '${window.location.origin}/auth/callback' }
+      options: { redirectTo: `${window.location.origin}/auth/callback` }
     });
   }
 
