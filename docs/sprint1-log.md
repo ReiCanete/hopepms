@@ -4,11 +4,11 @@
 - M4 (Rights & Authentication Specialist) - Setups the authentication for the Super Admin, Admin and Users.
 - M5 (QA) - Document how the app works and test how the app works.
 <br>
- Problems/Challenges Encounter:
+- Problems/Challenges Encounter:<br>
 - Codes not showing up in the repository.
 - Syntax errors.
 <br>
- Up Next:
+- Up Next:<br>
 - Add product CRUD service
 - Add price history service
 - Add products page with search, rights gating, delete confirm
