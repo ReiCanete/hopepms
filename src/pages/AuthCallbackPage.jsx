@@ -6,19 +6,26 @@ export default function AuthCallbackPage() {
   const navigate = useNavigate();
 
   useEffect(() => {
-    const { data: listener } = supabase.auth.onAuthStateChange(async (event, session) => {
-      if (event === 'SIGNED_IN' && session) {
-        const { data: userRow } = await supabase
-          .from('app_user').select('record_status').eq('"userId"', session.user.id).single();
-        if (userRow?.record_status === 'ACTIVE') {
-          navigate('/products');
-        } else {
-          await supabase.auth.signOut();
-          navigate('/login?error=not_activated');
-        }
+    supabase.auth.getSession().then(async ({ data: { session } }) => {
+      if (!session) {
+        // fallback: wait for hash-based session exchange
+        const { data: { session: s2 } } = await supabase.auth.refreshSession();
+        if (!s2) { navigate('/login'); return; }
+        return handleSession(s2);
       }
+      handleSession(session);
     });
-    return () => listener?.subscription?.unsubscribe();
+
+    async function handleSession(session) {
+      const { data: userRow } = await supabase
+        .from('app_user').select('record_status').eq('"userId"', session.user.id).single();
+      if (userRow?.record_status === 'ACTIVE') {
+        navigate('/products');
+      } else {
+        await supabase.auth.signOut();
+        navigate('/login?error=not_activated');
+      }
+    }
   }, []);
 
   return (
