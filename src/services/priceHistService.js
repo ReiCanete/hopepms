@@ -7,6 +7,7 @@ export async function getPriceHistory(prodCode) {
     .order('effDate', { ascending: false });
 }
 
+
 export async function addPriceEntry({ prodCode, effDate, unitPrice, userId }) {
   const stamp = makeStamp('ADDED', userId);
   return await supabase.from('priceHist').insert([{ prodCode, effDate, unitPrice, stamp }]);
