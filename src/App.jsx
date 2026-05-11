@@ -7,6 +7,7 @@ import RegisterPage from './pages/RegisterPage';
 import AuthCallbackPage from './pages/AuthCallbackPage';
 import ProductsPage from './pages/ProductsPage';
 import ReportsPage from './pages/ReportsPage';
+import TopSellingPage from './pages/TopSellingPage';
 import AdminPage from './pages/AdminPage';
 import DeletedItemsPage from './pages/DeletedItemsPage';
 import NotFoundPage from './pages/NotFoundPage';
@@ -20,6 +21,7 @@ export default function App() {
       <Route element={<ProtectedRoute><AppShell /></ProtectedRoute>}>
         <Route path="/products" element={<ProductsPage />} />
         <Route path="/reports" element={<ReportsPage />} />
+        <Route path="/reports/top-selling" element={<TopSellingPage />} />
         <Route element={<AdminRoute />}>
           <Route path="/deleted-items" element={<DeletedItemsPage />} />
           <Route path="/admin" element={<AdminPage />} />
