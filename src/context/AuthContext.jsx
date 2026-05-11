@@ -8,30 +8,26 @@ export function AuthProvider({ children }) {
   const [loading, setLoading] = useState(true);
 
   useEffect(() => {
-  const { data: listener } = supabase.auth.onAuthStateChange(async (event, session) => {
-    console.log('SESSION:', session);
-    console.log('USER ID:', session?.user?.id);
-    if (session) {
-      const { data: userRow, error } = await supabase
-        .from('app_user')
-        .select('record_status, user_type, username, first_name, last_name')
-        .eq('user_id', session.user.id)
-        .single();
-      console.log('USER ROW:', userRow);
-      console.log('ERROR:', error);
-      if (!userRow || userRow.record_status !== 'ACTIVE') {
-        await supabase.auth.signOut();
-        setCurrentUser(null);
+    const { data: listener } = supabase.auth.onAuthStateChange(async (event, session) => {
+      if (session) {
+        const { data: userRow } = await supabase
+          .from('app_user')
+          .select('record_status, user_type, username, first_name, last_name')
+          .eq('user_id', session.user.id)
+          .single();
+        if (!userRow || userRow.record_status !== 'ACTIVE') {
+          await supabase.auth.signOut();
+          setCurrentUser(null);
+        } else {
+          setCurrentUser({ ...session.user, ...userRow });
+        }
       } else {
-        setCurrentUser({ ...session.user, ...userRow });
+        setCurrentUser(null);
       }
-    } else {
-      setCurrentUser(null);
-    }
-    setLoading(false);
-  });
-  return () => listener?.subscription?.unsubscribe();
-}, []);
+      setLoading(false);
+    });
+    return () => listener?.subscription?.unsubscribe();
+  }, []);
 
   async function logout() {
     await supabase.auth.signOut();
