@@ -13,15 +13,15 @@ export function UserRightsProvider({ children }) {
     if (!currentUser) { setRights(null); setLoadingRights(false); return; }
     async function loadRights() {
       const { data } = await supabase
-        .from('UserModule_Rights')
-        .select('Right_ID, Right_value')
-        .eq('userid', currentUser.id)
-        .eq('Record_status','ACTIVE');
-      if (data) {
-        const map = {};
-        data.forEach(r => { map[r.Right_ID] = r.Right_value; });
-        setRights(map);
-      }
+  .from('user_module_rights')
+  .select('right_id, right_value')
+  .eq('user_id', currentUser.id)
+  .eq('record_status', 'ACTIVE');
+if (data) {
+  const map = {};
+  data.forEach(r => { map[r.right_id] = r.right_value; });
+  setRights(map);
+}
       setLoadingRights(false);
     }
     loadRights();
