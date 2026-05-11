@@ -20,4 +20,3 @@
 - Add UserRightsContext and useRights hook
 - Add RightsGate components
 - Update AppShell with rights-gated sidebar
-- 
