@@ -26,7 +26,7 @@ export default function RegisterPage() {
   async function handleGoogleRegister() {
     await supabase.auth.signInWithOAuth({
       provider: 'google',
-      options: { redirectTo: ${window.location.origin}/auth/callback }
+      options: { redirectTo: '${window.location.origin}/auth/callback' }
     });
   }
 
