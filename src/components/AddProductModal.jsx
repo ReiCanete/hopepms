@@ -4,7 +4,7 @@ import { addProduct } from '../services/productService';
 
 export default function AddProductModal({ onClose, onSuccess }) {
   const { currentUser } = useAuth();
-  const [form, setForm] = useState({ prodCode:'', description:'', unit:'pc' });
+  const [form, setForm] = useState({ prod_code:'', description:'', unit:'pc' });
   const [error, setError] = useState('');
   const [loading, setLoading] = useState(false);
 
@@ -32,8 +32,8 @@ export default function AddProductModal({ onClose, onSuccess }) {
           <form onSubmit={handleSubmit} className="space-y-4">
             <div>
               <label className="block text-sm font-medium text-slate-700 mb-1">Product Code</label>
-              <input placeholder="e.g. AK0004" value={form.prodCode}
-                onChange={e => setForm({...form, prodCode: e.target.value.toUpperCase()})}
+              <input placeholder="e.g. AK0004" value={form.prod_code}
+                onChange={e => setForm({...form, prod_code: e.target.value.toUpperCase()})}
                 className="w-full border border-slate-300 rounded-lg px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-blue-500 font-mono"
                 maxLength={6} required />
             </div>
