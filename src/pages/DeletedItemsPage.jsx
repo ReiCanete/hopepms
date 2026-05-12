@@ -1,66 +1,106 @@
-import { useEffect, useState } from 'react';
+import { useState, useEffect } from 'react';
+import { fetchDeletedProducts, recoverProduct } from '../services/productService';
 import { useAuth } from '../context/AuthContext';
-import { getProducts, recoverProduct } from '../services/productService';
+import { parseStamp } from '../utils/stampHelper';
 
 export default function DeletedItemsPage() {
-  const { currentUser } = useAuth();
+  const { user } = useAuth();
   const [products, setProducts] = useState([]);
   const [loading, setLoading] = useState(true);
+  const [error, setError] = useState('');
+  const [recovering, setRecovering] = useState(null);
 
   async function load() {
-    const { data } = await getProducts('ADMIN');
-    setProducts((data || []).filter(p => p.record_status === 'INACTIVE'));
-    setLoading(false);
+    setLoading(true);
+    setError('');
+    try {
+      const data = await fetchDeletedProducts();
+      setProducts(data);
+    } catch (err) {
+      setError(err.message);
+    } finally {
+      setLoading(false);
+    }
   }
 
   useEffect(() => { load(); }, []);
 
   async function handleRecover(prod_code) {
-    await recoverProduct(prod_code, currentUser.id);
-    load();
+    setRecovering(prod_code);
+    try {
+      await recoverProduct({ prod_code, userId: user.id });
+      await load();
+    } catch (err) {
+      setError(err.message || 'Failed to recover product.');
+    } finally {
+      setRecovering(null);
+    }
   }
 
-  if (loading) return (
-    <div className="flex items-center justify-center py-20">
-      <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-blue-600"></div>
-    </div>
-  );
-
   return (
-    <div>
+    <div className="p-6">
       <div className="mb-6">
-        <h1 className="text-xl font-bold text-slate-800">Deleted Items</h1>
-        <p className="text-sm text-slate-400">{products.length} archived product{products.length !== 1 ? 's' : ''}</p>
+        <h1 className="text-xl font-semibold text-gray-800">Deleted Items</h1>
+        <p className="text-sm text-gray-500">{products.length} inactive product{products.length !== 1 ? 's' : ''}</p>
       </div>
-      <div className="bg-white rounded-xl border border-slate-200 overflow-hidden">
+
+      {error && (
+        <div className="mb-4 rounded-lg bg-red-50 border border-red-200 px-4 py-3 text-sm text-red-600">{error}</div>
+      )}
+
+      <div className="bg-white rounded-xl border border-gray-200 overflow-x-auto">
         <table className="w-full text-sm">
           <thead>
-            <tr className="bg-slate-50 border-b border-slate-200">
-              <th className="px-5 py-3 text-left text-xs font-semibold text-slate-500 uppercase tracking-wider">Code</th>
-              <th className="px-5 py-3 text-left text-xs font-semibold text-slate-500 uppercase tracking-wider">Description</th>
-              <th className="px-5 py-3 text-left text-xs font-semibold text-slate-500 uppercase tracking-wider">Unit</th>
-              <th className="px-5 py-3 text-left text-xs font-semibold text-slate-500 uppercase tracking-wider">Stamp</th>
-              <th className="px-5 py-3 text-right text-xs font-semibold text-slate-500 uppercase tracking-wider">Action</th>
+            <tr className="text-xs text-gray-500 border-b bg-gray-50">
+              <th className="text-left px-4 py-3 font-medium">Product</th>
+              <th className="text-left px-4 py-3 font-medium">Unit</th>
+              <th className="text-right px-4 py-3 font-medium">Last Price</th>
+              <th className="text-center px-4 py-3 font-medium">Op Type</th>
+              <th className="text-left px-4 py-3 font-medium">Op By</th>
+              <th className="text-left px-4 py-3 font-medium">Op Date</th>
+              <th className="px-4 py-3" />
             </tr>
           </thead>
-          <tbody className="divide-y divide-slate-100">
-            {products.map(p => (
-              <tr key={p.prod_code} className="hover:bg-slate-50 transition-colors">
-                <td className="px-5 py-3 font-mono text-slate-700 font-medium">{p.prod_code}</td>
-                <td className="px-5 py-3 text-slate-700">{p.description}</td>
-                <td className="px-5 py-3 text-slate-500">{p.unit}</td>
-                <td className="px-5 py-3 text-xs text-slate-400 max-w-xs truncate">{p.stamp}</td>
-                <td className="px-5 py-3 text-right">
-                  <button onClick={() => handleRecover(p.prod_code)}
-                    className="text-xs text-green-600 hover:text-green-700 font-medium px-2 py-1 rounded hover:bg-green-50 transition-colors">Recover</button>
-                </td>
-              </tr>
-            ))}
+          <tbody>
+            {loading ? (
+              <tr><td colSpan={7} className="text-center py-12 text-gray-400">Loading…</td></tr>
+            ) : products.length === 0 ? (
+              <tr><td colSpan={7} className="text-center py-12 text-gray-400">No deleted items.</td></tr>
+            ) : products.map(p => {
+              const stamp = parseStamp(p.stamp);
+              return (
+                <tr key={p.prod_code} className="border-b last:border-0 hover:bg-gray-50 opacity-75">
+                  <td className="px-4 py-3">
+                    <div className="font-medium text-gray-700">{p.description}</div>
+                    <div className="text-xs text-gray-400">{p.prod_code}</div>
+                  </td>
+                  <td className="px-4 py-3 text-gray-500">{p.unit}</td>
+                  <td className="px-4 py-3 text-right text-gray-600">
+                    {p.unit_price != null ? `₱${Number(p.unit_price).toFixed(2)}` : '—'}
+                  </td>
+                  <td className="px-4 py-3 text-center">
+                    {stamp ? (
+                      <span className="inline-flex px-2 py-0.5 rounded-full text-xs font-medium bg-red-100 text-red-600">
+                        {stamp.opType}
+                      </span>
+                    ) : '—'}
+                  </td>
+                  <td className="px-4 py-3 text-gray-500 text-xs">{stamp?.opBy ? stamp.opBy.slice(0, 8) + '…' : '—'}</td>
+                  <td className="px-4 py-3 text-gray-500 text-xs">{stamp?.opDate ?? '—'}</td>
+                  <td className="px-4 py-3 text-right">
+                    <button
+                      onClick={() => handleRecover(p.prod_code)}
+                      disabled={recovering === p.prod_code}
+                      className="px-3 py-1.5 text-xs rounded-lg bg-green-600 text-white hover:bg-green-700 disabled:opacity-50"
+                    >
+                      {recovering === p.prod_code ? 'Recovering…' : '↩ Recover'}
+                    </button>
+                  </td>
+                </tr>
+              );
+            })}
           </tbody>
         </table>
-        {products.length === 0 && (
-          <div className="text-center py-12 text-slate-400"><p className="text-sm">No deleted items.</p></div>
-        )}
       </div>
     </div>
   );

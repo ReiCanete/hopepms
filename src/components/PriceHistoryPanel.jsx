@@ -1,98 +1,166 @@
-import { useEffect, useState } from 'react';
+import { useState, useEffect } from 'react';
+import { fetchPriceHistory, addPriceEntry } from '../services/priceHistService';
 import { useAuth } from '../context/AuthContext';
-import { getPriceHistory, addPriceEntry } from '../services/priceHistService';
 
-export default function PriceHistoryPanel({ prodCode }) {
-  const { currentUser } = useAuth();
+export default function PriceHistoryPanel({ product, onClose }) {
+  const { user } = useAuth();
   const [history, setHistory] = useState([]);
-  const [showForm, setShowForm] = useState(false);
-  const [form, setForm] = useState({ eff_date:'', unit_price:'' });
-  const [loading, setLoading] = useState(false);
-  const canAdd = ['ADMIN','SUPERADMIN'].includes(currentUser?.user_type);
-  const showStamp = ['ADMIN','SUPERADMIN'].includes(currentUser?.user_type);
-  const maxPrice = history.length ? Math.max(...history.map(h => parseFloat(h.unit_price))) : 1;
+  const [loading, setLoading] = useState(true);
+  const [error, setError] = useState('');
+
+  // Add form state
+  const [newEffDate, setNewEffDate] = useState('');
+  const [newUnitPrice, setNewUnitPrice] = useState('');
+  const [adding, setAdding] = useState(false);
+  const [addError, setAddError] = useState('');
 
   async function load() {
-    const { data } = await getPriceHistory(prodCode);
-    setHistory(data || []);
+    setLoading(true);
+    try {
+      const data = await fetchPriceHistory(product.prod_code);
+      setHistory(data);
+    } catch (err) {
+      setError(err.message);
+    } finally {
+      setLoading(false);
+    }
   }
 
-  useEffect(() => { load(); }, [prodCode]);
+  useEffect(() => { load(); }, [product.prod_code]);
 
   async function handleAdd(e) {
     e.preventDefault();
-    setLoading(true);
-    await addPriceEntry({ prod_code, eff_date: form.eff_date, unit_price: parseFloat(form.unit_price), userId: currentUser.id });
-    setShowForm(false);
-    setForm({ eff_date:'', unit_price:'' });
-    await load();
-    setLoading(false);
+    if (!newEffDate || !newUnitPrice) { setAddError('Both fields required.'); return; }
+    setAdding(true);
+    setAddError('');
+    try {
+      await addPriceEntry({
+        prod_code: product.prod_code,
+        eff_date: newEffDate,
+        unit_price: parseFloat(newUnitPrice),
+        userId: user.id,
+      });
+      setNewEffDate('');
+      setNewUnitPrice('');
+      await load();
+    } catch (err) {
+      setAddError(err.message || 'Failed to add price entry.');
+    } finally {
+      setAdding(false);
+    }
   }
 
+  // Simple bar chart — heights relative to max price
+  const maxPrice = history.length ? Math.max(...history.map(h => Number(h.unit_price) || 0)) : 1;
+
   return (
-    <div className="mt-2 bg-white border border-slate-200 rounded-xl p-4">
-      <div className="flex items-center justify-between mb-3">
-        <span className="text-xs font-semibold text-slate-600 uppercase tracking-wider">Price History</span>
-        {canAdd && !showForm && (
-          <button onClick={() => setShowForm(true)} className="text-xs text-blue-600 hover:text-blue-700 font-medium">+ Add Price</button>
-        )}
-      </div>
+    <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/40">
+      <div className="bg-white rounded-xl shadow-xl w-full max-w-2xl p-6 max-h-[90vh] overflow-y-auto">
+        <div className="flex items-start justify-between mb-4">
+          <div>
+            <h2 className="text-lg font-semibold text-gray-800">Price History</h2>
+            <p className="text-xs text-gray-500">{product.prod_code} — {product.description}</p>
+          </div>
+          <button onClick={onClose} className="text-gray-400 hover:text-gray-600 text-xl leading-none">✕</button>
+        </div>
 
-      {showForm && (
-        <form onSubmit={handleAdd} className="flex gap-2 mb-3 flex-wrap">
-          <input type="date" value={form.eff_date} onChange={e => setForm({...form, eff_date: e.target.value})}
-            className="border border-slate-300 rounded-lg px-2 py-1.5 text-xs focus:outline-none focus:ring-2 focus:ring-blue-500" required />
-          <input type="number" step="0.01" min="0.01" placeholder="Price" value={form.unit_price}
-            onChange={e => setForm({...form, unit_price: e.target.value})}
-            className="border border-slate-300 rounded-lg px-2 py-1.5 text-xs w-28 focus:outline-none focus:ring-2 focus:ring-blue-500" required />
-          <button type="submit" disabled={loading}
-            className="bg-blue-600 text-white text-xs px-3 py-1.5 rounded-lg disabled:opacity-50">{loading ? '...' : 'Save'}</button>
-          <button type="button" onClick={() => setShowForm(false)}
-            className="text-slate-400 hover:text-slate-600 text-xs px-2">Cancel</button>
-        </form>
-      )}
-
-      {history.length === 0 ? (
-        <p className="text-xs text-slate-400 text-center py-3">No price history yet.</p>
-      ) : (
-        <>
-          <div className="mb-4">
-            <p className="text-xs text-slate-400 mb-2">Price trend (oldest to newest)</p>
-            <div className="flex items-end gap-1 h-16">
+        {/* Bar chart */}
+        {history.length > 0 && (
+          <div className="mb-5 bg-gray-50 rounded-lg p-4">
+            <p className="text-xs text-gray-400 mb-2 font-medium">Price Trend</p>
+            <div className="flex items-end gap-2 h-24">
               {[...history].reverse().map((h, i) => {
-                const pct = (parseFloat(h.unit_price) / maxPrice) * 100;
+                const heightPct = maxPrice > 0 ? (Number(h.unit_price) / maxPrice) * 100 : 0;
                 return (
-                  <div key={i} className="flex-1 flex flex-col items-center group relative">
-                    <div style={{ height: `${Math.max(pct, 8)}%` }}
-                      className="w-full bg-blue-200 group-hover:bg-blue-500 rounded-t transition-colors" />
-                    <div className="absolute bottom-full mb-1 left-1/2 -translate-x-1/2 bg-slate-800 text-white text-xs rounded px-1.5 py-0.5 whitespace-nowrap opacity-0 group-hover:opacity-100 transition-opacity pointer-events-none z-10">
-                      ₱{parseFloat(h.unit_price).toFixed(2)} · {h.eff_date}
-                    </div>
+                  <div key={i} className="flex flex-col items-center gap-1 flex-1 min-w-0">
+                    <span className="text-[10px] text-gray-500 truncate">₱{Number(h.unit_price).toFixed(0)}</span>
+                    <div
+                      className="w-full rounded-t bg-blue-500"
+                      style={{ height: `${heightPct}%`, minHeight: '4px' }}
+                    />
+                    <span className="text-[9px] text-gray-400 truncate">{h.eff_date}</span>
                   </div>
                 );
               })}
             </div>
           </div>
-          <table className="w-full text-xs">
+        )}
+
+        {/* Add new price entry */}
+        <form onSubmit={handleAdd} className="mb-4 rounded-lg border border-blue-100 bg-blue-50 p-4">
+          <p className="text-xs font-medium text-blue-700 mb-3">Add New Price Entry</p>
+          {addError && (
+            <div className="mb-2 rounded bg-red-50 border border-red-200 px-3 py-1.5 text-xs text-red-600">{addError}</div>
+          )}
+          <div className="flex gap-3 items-end">
+            <div className="flex-1">
+              <label className="block text-xs text-gray-600 mb-1">Effectivity Date <span className="text-red-500">*</span></label>
+              <input
+                type="date"
+                className="w-full rounded-lg border border-gray-300 px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-blue-500"
+                value={newEffDate}
+                onChange={e => setNewEffDate(e.target.value)}
+              />
+            </div>
+            <div className="flex-1">
+              <label className="block text-xs text-gray-600 mb-1">Unit Price <span className="text-red-500">*</span></label>
+              <input
+                type="number"
+                min="0"
+                step="0.01"
+                className="w-full rounded-lg border border-gray-300 px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-blue-500"
+                value={newUnitPrice}
+                onChange={e => setNewUnitPrice(e.target.value)}
+                placeholder="0.00"
+              />
+            </div>
+            <button
+              type="submit"
+              disabled={adding}
+              className="px-4 py-2 text-sm rounded-lg bg-blue-700 text-white hover:bg-blue-800 disabled:opacity-50 whitespace-nowrap"
+            >
+              {adding ? 'Adding…' : '+ Add Entry'}
+            </button>
+          </div>
+        </form>
+
+        {/* History table */}
+        {loading ? (
+          <p className="text-sm text-gray-400 text-center py-6">Loading…</p>
+        ) : error ? (
+          <p className="text-sm text-red-500 text-center py-6">{error}</p>
+        ) : history.length === 0 ? (
+          <p className="text-sm text-gray-400 text-center py-6">No price history yet.</p>
+        ) : (
+          <table className="w-full text-sm">
             <thead>
-              <tr className="text-slate-500 border-b border-slate-100">
-                <th className="text-left pb-1.5 font-medium">Effective Date</th>
-                <th className="text-left pb-1.5 font-medium">Unit Price</th>
-                {showStamp && <th className="text-left pb-1.5 font-medium">Stamp</th>}
+              <tr className="text-xs text-gray-500 border-b">
+                <th className="text-left pb-2 font-medium">Effectivity Date</th>
+                <th className="text-right pb-2 font-medium">Unit Price</th>
+                <th className="text-left pb-2 font-medium pl-4">Modified By</th>
+                <th className="text-left pb-2 font-medium">Op Date</th>
               </tr>
             </thead>
-            <tbody className="divide-y divide-slate-50">
-              {history.map(h => (
-                <tr key={h.eff_date}>
-                  <td className="py-1.5 text-slate-600">{h.eff_date}</td>
-                  <td className="py-1.5 text-slate-800 font-medium">₱{parseFloat(h.unit_price).toFixed(2)}</td>
-                  {showStamp && <td className="py-1.5 text-slate-400 truncate max-w-xs">{h.stamp}</td>}
+            <tbody>
+              {history.map((h, i) => (
+                <tr key={i} className="border-b last:border-0 hover:bg-gray-50">
+                  {/* Effectivity date — IMMUTABLE, shown as plain text */}
+                  <td className="py-2 text-gray-700">{h.eff_date}</td>
+                  <td className="py-2 text-right font-medium text-gray-800">
+                    ₱{Number(h.unit_price).toFixed(2)}
+                  </td>
+                  <td className="py-2 pl-4 text-gray-500 text-xs">
+                    {h.modified_by ? h.modified_by.slice(0, 8) + '…' : '—'}
+                  </td>
+                  <td className="py-2 text-gray-500 text-xs">
+                    {h.created_at ? new Date(h.created_at).toLocaleString() : '—'}
+                  </td>
                 </tr>
               ))}
             </tbody>
           </table>
-        </>
-      )}
+        )}
+      </div>
     </div>
   );
 }
