@@ -1,18 +1,23 @@
-import { useEffect } from 'react';
+import { useEffect, useRef } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { supabase } from '../lib/supabaseClient';
 
 export default function AuthCallbackPage() {
   const navigate = useNavigate();
+  const timeoutRef = useRef(null);
 
   useEffect(() => {
     const { data: listener } = supabase.auth.onAuthStateChange(async (event, session) => {
       if (event === 'SIGNED_IN' && session) {
+        // Clear the fallback timeout immediately
+        clearTimeout(timeoutRef.current);
+
         const { data: userRow } = await supabase
           .from('app_user')
           .select('record_status')
           .eq('user_id', session.user.id)
           .single();
+
         if (userRow?.record_status === 'ACTIVE') {
           navigate('/products');
         } else {
@@ -25,10 +30,11 @@ export default function AuthCallbackPage() {
       }
     });
 
-    // timeout fallback — if nothing happens in 5 seconds, go to login
-    const timeout = setTimeout(() => navigate('/login'), 5000);
+    // Give it 10 seconds instead of 5, and use the ref so it can be cancelled
+    timeoutRef.current = setTimeout(() => navigate('/login'), 10000);
+
     return () => {
-      clearTimeout(timeout);
+      clearTimeout(timeoutRef.current);
       listener?.subscription?.unsubscribe();
     };
   }, []);
