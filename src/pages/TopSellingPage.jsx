@@ -34,7 +34,7 @@ export default function TopSellingPage() {
           </thead>
           <tbody className="divide-y divide-slate-100">
             {products.map((p, i) => (
-              <tr key={p.prod_Code} className="hover:bg-slate-50 transition-colors">
+              <tr key={p.prod_code} className="hover:bg-slate-50 transition-colors">
                 <td className="px-5 py-3">
                   <span className={`inline-flex items-center justify-center w-6 h-6 rounded-full text-xs font-bold ${
                     i===0 ? 'bg-yellow-100 text-yellow-700' :
@@ -42,7 +42,7 @@ export default function TopSellingPage() {
                     i===2 ? 'bg-orange-100 text-orange-700' : 'bg-slate-50 text-slate-400'
                   }`}>{i+1}</span>
                 </td>
-                <td className="px-5 py-3 font-mono text-slate-700 font-medium">{p.prod_Code}</td>
+                <td className="px-5 py-3 font-mono text-slate-700 font-medium">{p.prod_code}</td>
                 <td className="px-5 py-3 text-slate-700">{p.description}</td>
                 <td className="px-5 py-3 text-slate-500">{p.unit}</td>
                 <td className="px-5 py-3 font-semibold text-slate-800">{p.total_qty}</td>

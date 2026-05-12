@@ -15,8 +15,8 @@ export default function DeletedItemsPage() {
 
   useEffect(() => { load(); }, []);
 
-  async function handleRecover(prodCode) {
-    await recoverProduct(prodCode, currentUser.id);
+  async function handleRecover(prod_code) {
+    await recoverProduct(prod_code, currentUser.id);
     load();
   }
 
@@ -45,13 +45,13 @@ export default function DeletedItemsPage() {
           </thead>
           <tbody className="divide-y divide-slate-100">
             {products.map(p => (
-              <tr key={p.prodCode} className="hover:bg-slate-50 transition-colors">
-                <td className="px-5 py-3 font-mono text-slate-700 font-medium">{p.prodCode}</td>
+              <tr key={p.prod_code} className="hover:bg-slate-50 transition-colors">
+                <td className="px-5 py-3 font-mono text-slate-700 font-medium">{p.prod_code}</td>
                 <td className="px-5 py-3 text-slate-700">{p.description}</td>
                 <td className="px-5 py-3 text-slate-500">{p.unit}</td>
                 <td className="px-5 py-3 text-xs text-slate-400 max-w-xs truncate">{p.stamp}</td>
                 <td className="px-5 py-3 text-right">
-                  <button onClick={() => handleRecover(p.prodCode)}
+                  <button onClick={() => handleRecover(p.prod_code)}
                     className="text-xs text-green-600 hover:text-green-700 font-medium px-2 py-1 rounded hover:bg-green-50 transition-colors">Recover</button>
                 </td>
               </tr>
