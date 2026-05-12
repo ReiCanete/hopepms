@@ -10,14 +10,14 @@ export default function ReportsPage() {
     getProductReport().then(({ data }) => { setProducts(data || []); setLoading(false); });
   }, []);
 
-  const filtered = products.filter(p =>
-    p.prodCode?.toLowerCase().includes(search.toLowerCase()) ||
+    const filtered = products.filter(p =>
+    p.prod_code?.toLowerCase().includes(search.toLowerCase()) ||
     p.description?.toLowerCase().includes(search.toLowerCase())
   );
 
   function exportCSV() {
     const headers = ['Product Code','Description','Unit','Current Price','Effective Date'];
-    const rows = filtered.map(p => [p.prodCode, p.description, p.unit, p.unitPrice ?? '', p.effDate ?? '']);
+    const rows = filtered.map(p => [p.prod_code, p.description, p.unit, p.unit_price ?? '', p.eff_date ?? '']);
     const csv = [headers, ...rows].map(r => r.join(',')).join('\n');
     const blob = new Blob([csv], { type:'text/csv' });
     const url = URL.createObjectURL(blob);
@@ -64,14 +64,14 @@ export default function ReportsPage() {
           </thead>
           <tbody className="divide-y divide-slate-100">
             {filtered.map(p => (
-              <tr key={p.prodCode} className="hover:bg-slate-50 transition-colors">
-                <td className="px-5 py-3 font-mono text-slate-700 font-medium">{p.prodCode}</td>
+              <tr key={p.prod_Code} className="hover:bg-slate-50 transition-colors">
+                <td className="px-5 py-3 font-mono text-slate-700 font-medium">{p.prod_Code}</td>
                 <td className="px-5 py-3 text-slate-700">{p.description}</td>
                 <td className="px-5 py-3 text-slate-500">{p.unit}</td>
                 <td className="px-5 py-3 text-slate-800 font-medium">
-                  {p.unitPrice != null ? '₱${parseFloat(p.unitPrice).toFixed(2)}' : '—'}
+                  {p.unit_Price != null ? '₱${parseFloat(p.unit_Price).toFixed(2)}' : '—'}
                 </td>
-                <td className="px-5 py-3 text-slate-400">{p.effDate ?? '—'}</td>
+                <td className="px-5 py-3 text-slate-400">{p.eff_Date ?? '—'}</td>
               </tr>
             ))}
           </tbody>
