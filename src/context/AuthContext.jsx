@@ -10,36 +10,55 @@ export function AuthProvider({ children }) {
   useEffect(() => {
     const { data: listener } = supabase.auth.onAuthStateChange(async (event, session) => {
       console.log('EVENT:', event);
-      console.log('SESSION:', session);
       console.log('USER ID:', session?.user?.id);
 
       if (session?.user) {
-        // Small delay to ensure Supabase auth context is ready
-        await new Promise(resolve => setTimeout(resolve, 300));
+        try {
+          // Race the query against a 5 second timeout
+          const userRowPromise = supabase
+            .from('app_user')
+            .select('record_status, user_type, username, first_name, last_name')
+            .eq('user_id', session.user.id)
+            .single();
 
-        const { data: userRow, error } = await supabase
-          .from('app_user')
-          .select('record_status, user_type, username, first_name, last_name')
-          .eq('user_id', session.user.id)
-          .single();
+          const timeoutPromise = new Promise((_, reject) =>
+            setTimeout(() => reject(new Error('Query timeout')), 5000)
+          );
 
-        console.log('USER ROW:', userRow);
-        console.log('ERROR:', error);
+          const { data: userRow, error } = await Promise.race([userRowPromise, timeoutPromise]);
 
-        if (error || !userRow || userRow.record_status !== 'ACTIVE') {
-          console.log('Signing out — no active row found');
+          console.log('USER ROW:', userRow);
+          console.log('ERROR:', error);
+
+          if (error || !userRow || userRow.record_status !== 'ACTIVE') {
+            console.log('Signing out — no active row or error');
+            await supabase.auth.signOut();
+            setCurrentUser(null);
+          } else {
+            setCurrentUser({ ...session.user, ...userRow });
+          }
+        } catch (err) {
+          console.log('CAUGHT ERROR:', err.message);
           await supabase.auth.signOut();
           setCurrentUser(null);
-        } else {
-          setCurrentUser({ ...session.user, ...userRow });
         }
       } else {
         setCurrentUser(null);
       }
+
       setLoading(false);
     });
 
-    return () => listener?.subscription?.unsubscribe();
+    // Safety net — if onAuthStateChange never fires, unblock the UI after 8s
+    const safetyTimeout = setTimeout(() => {
+      console.log('Safety timeout fired');
+      setLoading(false);
+    }, 8000);
+
+    return () => {
+      clearTimeout(safetyTimeout);
+      listener?.subscription?.unsubscribe();
+    };
   }, []);
 
   async function logout() {
