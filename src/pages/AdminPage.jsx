@@ -12,18 +12,18 @@ export default function AdminPage() {
 
   async function loadUsers() {
     const { data } = await supabase
-      .from('app_user').select('"userId",username,firstName,lastName,user_type,record_status,stamp').order('username');
+      .from('app_user').select('user_id,username,first_name,last_name,user_type,record_status,stamp').order('username');
     setUsers(data || []);
   }
 
   async function loadAudit() {
     const [{ data: ud }, { data: pd }] = await Promise.all([
       supabase.from('app_user').select('username,user_type,record_status,stamp').not('stamp','is',null).order('stamp', { ascending:false }).limit(40),
-      supabase.from('product').select('prodCode,description,stamp').not('stamp','is',null).order('stamp', { ascending:false }).limit(40)
+      supabase.from('product').select('prod_code,description,stamp').not('stamp','is',null).order('stamp', { ascending:false }).limit(40)
     ]);
     const logs = [
       ...(ud || []).map(u => ({ type:'User', ref:u.username, detail:`${u.user_type} — ${u.record_status}`, stamp:u.stamp })),
-      ...(pd || []).map(p => ({ type:'Product', ref:p.prodCode, detail:p.description, stamp:p.stamp }))
+      ...(pd || []).map(p => ({ type:'Product', ref:p.prod_code, detail:p.description, stamp:p.stamp }))
     ].sort((a,b) => (b.stamp||'').localeCompare(a.stamp||'')).slice(0,60);
     setAuditLogs(logs);
   }
@@ -36,7 +36,7 @@ export default function AdminPage() {
     if (user.user_type === 'SUPERADMIN') return;
     const newStatus = user.record_status === 'ACTIVE' ? 'INACTIVE' : 'ACTIVE';
     const stamp = makeStamp(newStatus === 'ACTIVE' ? 'ACTIVATED' : 'DEACTIVATED', currentUser.id);
-    await supabase.from('app_user').update({ record_status:newStatus, stamp }).eq('"userId"', user.userId);
+    await supabase.from('app_user').update({ record_status:newStatus, stamp }).eq('user_id', user.user_id);
     await Promise.all([loadUsers(), loadAudit()]);
   }
 
@@ -78,15 +78,15 @@ export default function AdminPage() {
               {users.map(u => {
                 const isSA = u.user_type === 'SUPERADMIN';
                 return (
-                  <tr key={u.userId} className="hover:bg-slate-50 transition-colors">
+                  <tr key={u.user_id} className="hover:bg-slate-50 transition-colors">
                     <td className="px-5 py-3">
                       <div className="flex items-center gap-3">
                         <div className="w-8 h-8 bg-slate-200 rounded-full flex items-center justify-center flex-shrink-0">
-                          <span className="text-slate-600 text-xs font-medium">{(u.username||u.firstName||'?')[0].toUpperCase()}</span>
+                          <span className="text-slate-600 text-xs font-medium">{(u.username||u.first_name||'?')[0].toUpperCase()}</span>
                         </div>
                         <div>
                           <p className="font-medium text-slate-800">{u.username}</p>
-                          <p className="text-xs text-slate-400">{u.firstName} {u.lastName}</p>
+                          <p className="text-xs text-slate-400">{u.first_name} {u.last_name}</p>
                         </div>
                       </div>
                     </td>
