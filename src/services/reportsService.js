@@ -2,7 +2,7 @@ import { supabase } from '../lib/supabaseClient';
 
 export async function getProductReport() {
   return await supabase.from('current_product_price')
-    .select('*').eq('record_status','ACTIVE').order('prodCode');
+    .select('*').eq('record_status','ACTIVE').order('prod_code');
 }
 
 export async function getTopSellingReport() {

@@ -9,56 +9,60 @@ export function AuthProvider({ children }) {
   const safetyRef = useRef(null);
 
   useEffect(() => {
-    const { data: listener } = supabase.auth.onAuthStateChange(async (event, session) => {
-      console.log('EVENT:', event);
-      console.log('USER ID:', session?.user?.id);
+  let mounted = true;
 
-      if (session?.user) {
-        try {
-          const userRowPromise = supabase
-            .from('app_user')
-            .select('record_status, user_type, username, first_name, last_name')
-            .eq('user_id', session.user.id)
-            .single();
+  async function init() {
+    // Fast path: get existing session immediately, no waiting
+    const { data: { session } } = await supabase.auth.getSession();
 
-          const timeoutPromise = new Promise((_, reject) =>
-            setTimeout(() => reject(new Error('Query timeout')), 15000)
-          );
+    if (session?.user) {
+      const { data: userRow, error } = await supabase
+        .from('app_user')
+        .select('record_status, user_type, username, first_name, last_name')
+        .eq('user_id', session.user.id)
+        .single();
 
-          const { data: userRow, error } = await Promise.race([userRowPromise, timeoutPromise]);
-
-          console.log('USER ROW:', userRow);
-          console.log('ERROR:', error);
-
-          if (error || !userRow || userRow.record_status !== 'ACTIVE') {
-            await supabase.auth.signOut();
-            setCurrentUser(null);
-          } else {
-            // Cancel safety timeout — auth resolved successfully
-            clearTimeout(safetyRef.current);
-            setCurrentUser({ ...session.user, ...userRow });
-          }
-        } catch (err) {
-          console.log('CAUGHT ERROR:', err.message);
-          // Don't sign out on timeout — another event may succeed
-        }
+      if (!error && userRow?.record_status === 'ACTIVE') {
+        if (mounted) setCurrentUser({ ...session.user, ...userRow });
       } else {
-        setCurrentUser(null);
+        await supabase.auth.signOut();
+        if (mounted) setCurrentUser(null);
       }
+    }
 
-      setLoading(false);
-    });
+    if (mounted) setLoading(false);
+  }
 
-    safetyRef.current = setTimeout(() => {
-      console.log('Safety timeout fired');
-      setLoading(false);
-    }, 20000);
+  init();
 
-    return () => {
-      clearTimeout(safetyRef.current);
-      listener?.subscription?.unsubscribe();
-    };
-  }, []);
+  // Still listen for sign-in/sign-out events after initial load
+  const { data: listener } = supabase.auth.onAuthStateChange(async (event, session) => {
+    if (event === 'SIGNED_OUT') {
+      if (mounted) setCurrentUser(null);
+      return;
+    }
+    if (event === 'SIGNED_IN' && session?.user) {
+      const { data: userRow, error } = await supabase
+        .from('app_user')
+        .select('record_status, user_type, username, first_name, last_name')
+        .eq('user_id', session.user.id)
+        .single();
+
+      if (!error && userRow?.record_status === 'ACTIVE') {
+        if (mounted) setCurrentUser({ ...session.user, ...userRow });
+      } else {
+        await supabase.auth.signOut();
+        if (mounted) setCurrentUser(null);
+      }
+    }
+  });
+
+  return () => {
+    mounted = false;
+    clearTimeout(safetyRef.current);
+    listener?.subscription?.unsubscribe();
+  };
+}, []);
 
   async function logout() {
     await supabase.auth.signOut();
