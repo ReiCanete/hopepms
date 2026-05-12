@@ -30,14 +30,14 @@ export default function ProductsPage() {
 
   useEffect(() => { loadProducts(); }, []);
 
-  async function handleDelete(prodCode) {
-    const { error } = await softDeleteProduct(prodCode, currentUser.id);
+  async function handleDelete(prod_code) {
+    const { error } = await softDeleteProduct(prod_code, currentUser.id);
     if (error) setError(error.message);
     else { setDeleteProduct(null); loadProducts(); }
   }
 
   const filtered = products.filter(p =>
-    p.prodCode?.toLowerCase().includes(search.toLowerCase()) ||
+    p.prod_code?.toLowerCase().includes(search.toLowerCase()) ||
     p.description?.toLowerCase().includes(search.toLowerCase()) ||
     p.unit?.toLowerCase().includes(search.toLowerCase())
   );
@@ -93,9 +93,9 @@ export default function ProductsPage() {
           <tbody className="divide-y divide-slate-100">
             {filtered.map(p => (
               <>
-                <tr key={p.prodCode} className="hover:bg-slate-50 transition-colors cursor-pointer"
-                  onClick={() => setExpandedRow(expandedRow === p.prodCode ? null : p.prodCode)}>
-                  <td className="px-5 py-3 font-mono text-slate-700 font-medium">{p.prodCode}</td>
+                <tr key={p.prod_Code} className="hover:bg-slate-50 transition-colors cursor-pointer"
+                  onClick={() => setExpandedRow(expandedRow === p.prod_Code ? null : p.prod_Code)}>
+                  <td className="px-5 py-3 font-mono text-slate-700 font-medium">{p.prod_Code}</td>
                   <td className="px-5 py-3 text-slate-700">{p.description}</td>
                   <td className="px-5 py-3 text-slate-500">{p.unit}</td>
                   <td className="px-5 py-3">
@@ -117,10 +117,10 @@ export default function ProductsPage() {
                     </div>
                   </td>
                 </tr>
-                {expandedRow === p.prodCode && (
-                  <tr key={`${p.prodCode}-price`}>
+                {expandedRow === p.prod_Code && (
+                  <tr key={`${p.prod_Code}-price`}>
                     <td colSpan={showStamp ? 6 : 5} className="px-5 pb-4 bg-slate-50">
-                      <PriceHistoryPanel prodCode={p.prodCode} />
+                      <PriceHistoryPanel prodCode={p.prod_Code} />
                     </td>
                   </tr>
                 )}
@@ -137,7 +137,7 @@ export default function ProductsPage() {
 
       {showAdd && <AddProductModal onClose={() => setShowAdd(false)} onSuccess={loadProducts} />}
       {editProduct && <EditProductModal product={editProduct} onClose={() => setEditProduct(null)} onSuccess={loadProducts} />}
-      {deleteProduct && <DeleteConfirmModal product={deleteProduct} onClose={() => setDeleteProduct(null)} onConfirm={() => handleDelete(deleteProduct.prodCode)} />}
+      {deleteProduct && <DeleteConfirmModal product={deleteProduct} onClose={() => setDeleteProduct(null)} onConfirm={() => handleDelete(deleteProduct.prod_Code)} />}
     </div>
   );
 }

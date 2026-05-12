@@ -6,11 +6,11 @@ export default function PriceHistoryPanel({ prodCode }) {
   const { currentUser } = useAuth();
   const [history, setHistory] = useState([]);
   const [showForm, setShowForm] = useState(false);
-  const [form, setForm] = useState({ effDate:'', unitPrice:'' });
+  const [form, setForm] = useState({ eff_Date:'', unit_Price:'' });
   const [loading, setLoading] = useState(false);
   const canAdd = ['ADMIN','SUPERADMIN'].includes(currentUser?.user_type);
   const showStamp = ['ADMIN','SUPERADMIN'].includes(currentUser?.user_type);
-  const maxPrice = history.length ? Math.max(...history.map(h => parseFloat(h.unitPrice))) : 1;
+  const maxPrice = history.length ? Math.max(...history.map(h => parseFloat(h.unit_price))) : 1;
 
   async function load() {
     const { data } = await getPriceHistory(prodCode);
@@ -22,9 +22,9 @@ export default function PriceHistoryPanel({ prodCode }) {
   async function handleAdd(e) {
     e.preventDefault();
     setLoading(true);
-    await addPriceEntry({ prodCode, effDate: form.effDate, unitPrice: parseFloat(form.unitPrice), userId: currentUser.id });
+    await addPriceEntry({ prodCode, eff_date: form.eff_date, unit_price: parseFloat(form.unit_price), userId: currentUser.id });
     setShowForm(false);
-    setForm({ effDate:'', unitPrice:'' });
+    setForm({ eff_date:'', unit_price:'' });
     await load();
     setLoading(false);
   }
@@ -40,10 +40,10 @@ export default function PriceHistoryPanel({ prodCode }) {
 
       {showForm && (
         <form onSubmit={handleAdd} className="flex gap-2 mb-3 flex-wrap">
-          <input type="date" value={form.effDate} onChange={e => setForm({...form, effDate: e.target.value})}
+          <input type="date" value={form.eff_Date} onChange={e => setForm({...form, eff_Date: e.target.value})}
             className="border border-slate-300 rounded-lg px-2 py-1.5 text-xs focus:outline-none focus:ring-2 focus:ring-blue-500" required />
-          <input type="number" step="0.01" min="0.01" placeholder="Price" value={form.unitPrice}
-            onChange={e => setForm({...form, unitPrice: e.target.value})}
+          <input type="number" step="0.01" min="0.01" placeholder="Price" value={form.unit_Price}
+            onChange={e => setForm({...form, unit_Price: e.target.value})}
             className="border border-slate-300 rounded-lg px-2 py-1.5 text-xs w-28 focus:outline-none focus:ring-2 focus:ring-blue-500" required />
           <button type="submit" disabled={loading}
             className="bg-blue-600 text-white text-xs px-3 py-1.5 rounded-lg disabled:opacity-50">{loading ? '...' : 'Save'}</button>
@@ -60,13 +60,13 @@ export default function PriceHistoryPanel({ prodCode }) {
             <p className="text-xs text-slate-400 mb-2">Price trend (oldest to newest)</p>
             <div className="flex items-end gap-1 h-16">
               {[...history].reverse().map((h, i) => {
-                const pct = (parseFloat(h.unitPrice) / maxPrice) * 100;
+                const pct = (parseFloat(h.unit_Price) / maxPrice) * 100;
                 return (
                   <div key={i} className="flex-1 flex flex-col items-center group relative">
                     <div style={{ height: '${Math.max(pct, 8)}%' }}
                       className="w-full bg-blue-200 group-hover:bg-blue-500 rounded-t transition-colors" />
                     <div className="absolute bottom-full mb-1 left-1/2 -translate-x-1/2 bg-slate-800 text-white text-xs rounded px-1.5 py-0.5 whitespace-nowrap opacity-0 group-hover:opacity-100 transition-opacity pointer-events-none z-10">
-                      ₱{parseFloat(h.unitPrice).toFixed(2)} · {h.effDate}
+                      ₱{parseFloat(h.unit_Price).toFixed(2)} · {h.eff_Date}
                     </div>
                   </div>
                 );
@@ -83,9 +83,9 @@ export default function PriceHistoryPanel({ prodCode }) {
             </thead>
             <tbody className="divide-y divide-slate-50">
               {history.map(h => (
-                <tr key={h.effDate}>
-                  <td className="py-1.5 text-slate-600">{h.effDate}</td>
-                  <td className="py-1.5 text-slate-800 font-medium">₱{parseFloat(h.unitPrice).toFixed(2)}</td>
+                <tr key={h.eff_Date}>
+                  <td className="py-1.5 text-slate-600">{h.eff_Date}</td>
+                  <td className="py-1.5 text-slate-800 font-medium">₱{parseFloat(h.unit_Price).toFixed(2)}</td>
                   {showStamp && <td className="py-1.5 text-slate-400 truncate max-w-xs">{h.stamp}</td>}
                 </tr>
               ))}
