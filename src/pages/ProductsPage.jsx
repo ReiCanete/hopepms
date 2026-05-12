@@ -93,9 +93,9 @@ export default function ProductsPage() {
           <tbody className="divide-y divide-slate-100">
             {filtered.map(p => (
               <>
-                <tr key={p.prod_Code} className="hover:bg-slate-50 transition-colors cursor-pointer"
-                  onClick={() => setExpandedRow(expandedRow === p.prod_Code ? null : p.prod_Code)}>
-                  <td className="px-5 py-3 font-mono text-slate-700 font-medium">{p.prod_Code}</td>
+                <tr key={p.prod_code} className="hover:bg-slate-50 transition-colors cursor-pointer"
+                  onClick={() => setExpandedRow(expandedRow === p.prod_code ? null : p.prod_code)}>
+                  <td className="px-5 py-3 font-mono text-slate-700 font-medium">{p.prod_code}</td>
                   <td className="px-5 py-3 text-slate-700">{p.description}</td>
                   <td className="px-5 py-3 text-slate-500">{p.unit}</td>
                   <td className="px-5 py-3">
@@ -117,10 +117,10 @@ export default function ProductsPage() {
                     </div>
                   </td>
                 </tr>
-                {expandedRow === p.prod_Code && (
-                  <tr key={`${p.prod_Code}-price`}>
+                {expandedRow === p.prod_code && (
+                  <tr key={`${p.prod_code}-price`}>
                     <td colSpan={showStamp ? 6 : 5} className="px-5 pb-4 bg-slate-50">
-                      <PriceHistoryPanel prodCode={p.prod_Code} />
+                      <PriceHistoryPanel prodCode={p.prod_code} />
                     </td>
                   </tr>
                 )}
@@ -137,7 +137,7 @@ export default function ProductsPage() {
 
       {showAdd && <AddProductModal onClose={() => setShowAdd(false)} onSuccess={loadProducts} />}
       {editProduct && <EditProductModal product={editProduct} onClose={() => setEditProduct(null)} onSuccess={loadProducts} />}
-      {deleteProduct && <DeleteConfirmModal product={deleteProduct} onClose={() => setDeleteProduct(null)} onConfirm={() => handleDelete(deleteProduct.prod_Code)} />}
+      {deleteProduct && <DeleteConfirmModal product={deleteProduct} onClose={() => setDeleteProduct(null)} onConfirm={() => handleDelete(deleteProduct.prod_code)} />}
     </div>
   );
 }

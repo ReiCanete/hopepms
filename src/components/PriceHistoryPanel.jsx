@@ -6,7 +6,7 @@ export default function PriceHistoryPanel({ prodCode }) {
   const { currentUser } = useAuth();
   const [history, setHistory] = useState([]);
   const [showForm, setShowForm] = useState(false);
-  const [form, setForm] = useState({ eff_Date:'', unit_Price:'' });
+  const [form, setForm] = useState({ eff_date:'', unit_price:'' });
   const [loading, setLoading] = useState(false);
   const canAdd = ['ADMIN','SUPERADMIN'].includes(currentUser?.user_type);
   const showStamp = ['ADMIN','SUPERADMIN'].includes(currentUser?.user_type);
@@ -40,10 +40,10 @@ export default function PriceHistoryPanel({ prodCode }) {
 
       {showForm && (
         <form onSubmit={handleAdd} className="flex gap-2 mb-3 flex-wrap">
-          <input type="date" value={form.eff_Date} onChange={e => setForm({...form, eff_Date: e.target.value})}
+          <input type="date" value={form.eff_date} onChange={e => setForm({...form, eff_date: e.target.value})}
             className="border border-slate-300 rounded-lg px-2 py-1.5 text-xs focus:outline-none focus:ring-2 focus:ring-blue-500" required />
-          <input type="number" step="0.01" min="0.01" placeholder="Price" value={form.unit_Price}
-            onChange={e => setForm({...form, unit_Price: e.target.value})}
+          <input type="number" step="0.01" min="0.01" placeholder="Price" value={form.unit_price}
+            onChange={e => setForm({...form, unit_price: e.target.value})}
             className="border border-slate-300 rounded-lg px-2 py-1.5 text-xs w-28 focus:outline-none focus:ring-2 focus:ring-blue-500" required />
           <button type="submit" disabled={loading}
             className="bg-blue-600 text-white text-xs px-3 py-1.5 rounded-lg disabled:opacity-50">{loading ? '...' : 'Save'}</button>
@@ -60,13 +60,13 @@ export default function PriceHistoryPanel({ prodCode }) {
             <p className="text-xs text-slate-400 mb-2">Price trend (oldest to newest)</p>
             <div className="flex items-end gap-1 h-16">
               {[...history].reverse().map((h, i) => {
-                const pct = (parseFloat(h.unit_Price) / maxPrice) * 100;
+                const pct = (parseFloat(h.unit_price) / maxPrice) * 100;
                 return (
                   <div key={i} className="flex-1 flex flex-col items-center group relative">
-                    <div style={{ height: '${Math.max(pct, 8)}%' }}
+                    <div style={{ height: `${Math.max(pct, 8)}%` }}
                       className="w-full bg-blue-200 group-hover:bg-blue-500 rounded-t transition-colors" />
                     <div className="absolute bottom-full mb-1 left-1/2 -translate-x-1/2 bg-slate-800 text-white text-xs rounded px-1.5 py-0.5 whitespace-nowrap opacity-0 group-hover:opacity-100 transition-opacity pointer-events-none z-10">
-                      ₱{parseFloat(h.unit_Price).toFixed(2)} · {h.eff_Date}
+                      ₱{parseFloat(h.unit_price).toFixed(2)} · {h.eff_date}
                     </div>
                   </div>
                 );
@@ -83,9 +83,9 @@ export default function PriceHistoryPanel({ prodCode }) {
             </thead>
             <tbody className="divide-y divide-slate-50">
               {history.map(h => (
-                <tr key={h.eff_Date}>
-                  <td className="py-1.5 text-slate-600">{h.eff_Date}</td>
-                  <td className="py-1.5 text-slate-800 font-medium">₱{parseFloat(h.unit_Price).toFixed(2)}</td>
+                <tr key={h.eff_date}>
+                  <td className="py-1.5 text-slate-600">{h.eff_date}</td>
+                  <td className="py-1.5 text-slate-800 font-medium">₱{parseFloat(h.unit_price).toFixed(2)}</td>
                   {showStamp && <td className="py-1.5 text-slate-400 truncate max-w-xs">{h.stamp}</td>}
                 </tr>
               ))}
