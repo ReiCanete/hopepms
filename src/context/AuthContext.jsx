@@ -6,63 +6,61 @@ const AuthContext = createContext(null);
 export function AuthProvider({ children }) {
   const [currentUser, setCurrentUser] = useState(null);
   const [loading, setLoading] = useState(true);
-  const safetyRef = useRef(null);
+  const initialized = useRef(false);
 
   useEffect(() => {
-  let mounted = true;
+    let mounted = true;
 
-  async function init() {
-    // Fast path: get existing session immediately, no waiting
-    const { data: { session } } = await supabase.auth.getSession();
+    // Listen for auth events (sign in, sign out)
+    const { data: listener } = supabase.auth.onAuthStateChange(async (event, session) => {
+      if (!mounted) return;
 
-    if (session?.user) {
-      const { data: userRow, error } = await supabase
-        .from('app_user')
-        .select('record_status, user_type, username, first_name, last_name')
-        .eq('user_id', session.user.id)
-        .single();
+      if (!session?.user) {
+        setCurrentUser(null);
+        setLoading(false);
+        return;
+      }
 
-      if (!error && userRow?.record_status === 'ACTIVE') {
-        if (mounted) setCurrentUser({ ...session.user, ...userRow });
-      } else {
-        await supabase.auth.signOut();
+      // Only query DB if not already initialized with this user
+      if (initialized.current && currentUser?.id === session.user.id) return;
+
+      try {
+        const { data: userRow, error } = await supabase
+          .from('app_user')
+          .select('record_status, user_type, username, first_name, last_name')
+          .eq('user_id', session.user.id)
+          .single();
+
+        if (!mounted) return;
+
+        if (!error && userRow?.record_status === 'ACTIVE') {
+          setCurrentUser({ ...session.user, ...userRow });
+        } else {
+          await supabase.auth.signOut();
+          setCurrentUser(null);
+        }
+      } catch (err) {
+        console.log('AuthContext error:', err.message);
         if (mounted) setCurrentUser(null);
       }
-    }
 
-    if (mounted) setLoading(false);
-  }
-
-  init();
-
-  // Still listen for sign-in/sign-out events after initial load
-  const { data: listener } = supabase.auth.onAuthStateChange(async (event, session) => {
-    if (event === 'SIGNED_OUT') {
-      if (mounted) setCurrentUser(null);
-      return;
-    }
-    if (event === 'SIGNED_IN' && session?.user) {
-      const { data: userRow, error } = await supabase
-        .from('app_user')
-        .select('record_status, user_type, username, first_name, last_name')
-        .eq('user_id', session.user.id)
-        .single();
-
-      if (!error && userRow?.record_status === 'ACTIVE') {
-        if (mounted) setCurrentUser({ ...session.user, ...userRow });
-      } else {
-        await supabase.auth.signOut();
-        if (mounted) setCurrentUser(null);
+      if (mounted) {
+        initialized.current = true;
+        setLoading(false);
       }
-    }
-  });
+    });
 
-  return () => {
-    mounted = false;
-    clearTimeout(safetyRef.current);
-    listener?.subscription?.unsubscribe();
-  };
-}, []);
+    // Safety net — if onAuthStateChange never fires (edge case)
+    const safety = setTimeout(() => {
+      if (mounted && loading) setLoading(false);
+    }, 5000);
+
+    return () => {
+      mounted = false;
+      clearTimeout(safety);
+      listener?.subscription?.unsubscribe();
+    };
+  }, []);
 
   async function logout() {
     await supabase.auth.signOut();
