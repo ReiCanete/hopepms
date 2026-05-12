@@ -9,7 +9,7 @@ export default function PriceHistoryPanel({ product, onClose }) {
   const [error, setError] = useState('');
 
   // Add form state
-  const [newEffDate, setNewEffDate] = useState('');
+  const [newEffDate, setNewEffDate] = useState(new Date().toISOString().slice(0, 10));
   const [newUnitPrice, setNewUnitPrice] = useState('');
   const [adding, setAdding] = useState(false);
   const [addError, setAddError] = useState('');
