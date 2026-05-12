@@ -6,7 +6,7 @@ const AuthContext = createContext(null);
 export function AuthProvider({ children }) {
   const [currentUser, setCurrentUser] = useState(null);
   const [loading, setLoading] = useState(true);
-  const safetyRef = useRef(null);
+  const initialized = useRef(false);
 
   useEffect(() => {
     const { data:Listener } = supabase.auth.onAuthStateChange(async (event, session) => {
@@ -51,13 +51,14 @@ export function AuthProvider({ children }) {
   }
 });
 
-    safetyRef.current = setTimeout(() => {
-      console.log('Safety timeout fired');
-      setLoading(false);
-    }, 20000);
+    // Safety net — if onAuthStateChange never fires (edge case)
+    const safety = setTimeout(() => {
+      if (mounted && loading) setLoading(false);
+    }, 5000);
 
     return () => {
-      clearTimeout(safetyRef.current);
+      mounted = false;
+      clearTimeout(safety);
       listener?.subscription?.unsubscribe();
     };
   }, []);
