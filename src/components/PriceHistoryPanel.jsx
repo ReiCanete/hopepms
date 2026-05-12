@@ -3,7 +3,7 @@ import { fetchPriceHistory, addPriceEntry } from '../services/priceHistService';
 import { useAuth } from '../context/AuthContext';
 
 export default function PriceHistoryPanel({ product, onClose }) {
-  const { user } = useAuth();
+  const { currentUser: user } = useAuth();
   const [history, setHistory] = useState([]);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState('');

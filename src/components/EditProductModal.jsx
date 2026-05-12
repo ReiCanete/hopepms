@@ -3,7 +3,7 @@ import { editProduct } from '../services/productService';
 import { useAuth } from '../context/AuthContext';
 
 export default function EditProductModal({ product, onClose, onSuccess }) {
-  const { user } = useAuth();
+  const { currentUser: user } = useAuth();
   const [description, setDescription] = useState(product.description);
   const [unit, setUnit] = useState(product.unit);
   const [loading, setLoading] = useState(false);

@@ -3,7 +3,7 @@ import { deactivateProduct } from '../services/productService';
 import { useAuth } from '../context/AuthContext';
 
 export default function DeleteConfirmModal({ product, onClose, onSuccess }) {
-  const { user } = useAuth();
+  const { currentUser: user } = useAuth();
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState('');
 
