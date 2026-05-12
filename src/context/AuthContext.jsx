@@ -9,9 +9,6 @@ export function AuthProvider({ children }) {
   const initialized = useRef(false);
 
   useEffect(() => {
-    let mounted = true;
-
-    // Listen for auth events (sign in, sign out)
     const { data:Listener } = supabase.auth.onAuthStateChange(async (event, session) => {
   if (!mounted) return;
 

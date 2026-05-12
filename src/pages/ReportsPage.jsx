@@ -10,7 +10,7 @@ export default function ReportsPage() {
     getProductReport().then(({ data }) => { setProducts(data || []); setLoading(false); });
   }, []);
 
-  const filtered = products.filter(p =>
+    const filtered = products.filter(p =>
     p.prod_code?.toLowerCase().includes(search.toLowerCase()) ||
     p.description?.toLowerCase().includes(search.toLowerCase())
   );
@@ -69,9 +69,9 @@ export default function ReportsPage() {
                 <td className="px-5 py-3 text-slate-700">{p.description}</td>
                 <td className="px-5 py-3 text-slate-500">{p.unit}</td>
                 <td className="px-5 py-3 text-slate-800 font-medium">
-                  {p.unit_price != null ? `₱${parseFloat(p.unit_price).toFixed(2)}` : '—'}
+                  {p.unit_Price != null ? '₱${parseFloat(p.unit_Price).toFixed(2)}' : '—'}
                 </td>
-                <td className="px-5 py-3 text-slate-400">{p.eff_date ?? '—'}</td>
+                <td className="px-5 py-3 text-slate-400">{p.eff_Date ?? '—'}</td>
               </tr>
             ))}
           </tbody>
