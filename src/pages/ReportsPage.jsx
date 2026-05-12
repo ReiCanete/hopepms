@@ -1,84 +1,108 @@
-import { useEffect, useState } from 'react';
-import { getProductReport } from '../services/reportsService';
+import { useState, useEffect } from 'react';
+import { fetchReportData, exportToCSV, exportToPDF } from '../services/reportsService';
 
 export default function ReportsPage() {
-  const [products, setProducts] = useState([]);
-  const [search, setSearch] = useState('');
+  const [data, setData] = useState([]);
   const [loading, setLoading] = useState(true);
+  const [error, setError] = useState('');
+  const [exporting, setExporting] = useState(null);
 
-  useEffect(() => {
-    getProductReport().then(({ data }) => { setProducts(data || []); setLoading(false); });
-  }, []);
-
-    const filtered = products.filter(p =>
-    p.prod_code?.toLowerCase().includes(search.toLowerCase()) ||
-    p.description?.toLowerCase().includes(search.toLowerCase())
-  );
-
-  function exportCSV() {
-    const headers = ['Product Code','Description','Unit','Current Price','Effective Date'];
-    const rows = filtered.map(p => [p.prod_code, p.description, p.unit, p.unit_price ?? '', p.eff_date ?? '']);
-    const csv = [headers, ...rows].map(r => r.join(',')).join('\n');
-    const blob = new Blob([csv], { type:'text/csv' });
-    const url = URL.createObjectURL(blob);
-    const a = document.createElement('a');
-    a.href = url; a.download = 'product-report.csv'; a.click();
-    URL.revokeObjectURL(url);
+  async function load() {
+    setLoading(true);
+    setError('');
+    try {
+      const rows = await fetchReportData();
+      setData(rows);
+    } catch (err) {
+      setError(err.message);
+    } finally {
+      setLoading(false);
+    }
   }
 
-  if (loading) return (
-    <div className="flex items-center justify-center py-20">
-      <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-blue-600"></div>
-    </div>
-  );
+  useEffect(() => { load(); }, []);
+
+  async function handleExportPDF() {
+    setExporting('pdf');
+    try {
+      await exportToPDF(data);
+    } catch (err) {
+      setError('PDF export failed: ' + err.message);
+    } finally {
+      setExporting(null);
+    }
+  }
+
+  function handleExportCSV() {
+    exportToCSV(data);
+  }
 
   return (
-    <div>
+    <div className="p-6">
       <div className="flex items-center justify-between mb-6">
         <div>
-          <h1 className="text-xl font-bold text-slate-800">Product Report</h1>
-          <p className="text-sm text-slate-400">REP_001 — Active products with current price</p>
+          <h1 className="text-xl font-semibold text-gray-800">Reports</h1>
+          <p className="text-sm text-gray-500">Product price list</p>
         </div>
-        <button onClick={exportCSV}
-          className="flex items-center gap-2 bg-green-600 hover:bg-green-700 text-white text-sm font-medium px-4 py-2 rounded-lg transition-colors">
-          <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-            <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M4 16v1a3 3 0 003 3h10a3 3 0 003-3v-1m-4-4l-4 4m0 0l-4-4m4 4V4" />
-          </svg>
-          Export CSV
-        </button>
+        <div className="flex gap-2">
+          <button
+            onClick={handleExportCSV}
+            disabled={loading || data.length === 0}
+            className="px-4 py-2 text-sm rounded-lg border border-gray-300 text-gray-700 hover:bg-gray-50 disabled:opacity-40"
+          >
+            Export CSV
+          </button>
+          <button
+            onClick={handleExportPDF}
+            disabled={loading || data.length === 0 || exporting === 'pdf'}
+            className="px-4 py-2 text-sm rounded-lg bg-blue-700 text-white hover:bg-blue-800 disabled:opacity-40"
+          >
+            {exporting === 'pdf' ? 'Generating PDF…' : 'Export PDF'}
+          </button>
+        </div>
       </div>
-      <div className="mb-4">
-        <input placeholder="Search..." value={search} onChange={e => setSearch(e.target.value)}
-          className="border border-slate-300 rounded-lg px-3 py-2 text-sm w-full max-w-sm focus:outline-none focus:ring-2 focus:ring-blue-500" />
-      </div>
-      <div className="bg-white rounded-xl border border-slate-200 overflow-hidden">
+
+      {error && (
+        <div className="mb-4 rounded-lg bg-red-50 border border-red-200 px-4 py-3 text-sm text-red-600">{error}</div>
+      )}
+
+      <div className="bg-white rounded-xl border border-gray-200 overflow-x-auto">
         <table className="w-full text-sm">
           <thead>
-            <tr className="bg-slate-50 border-b border-slate-200">
-              <th className="px-5 py-3 text-left text-xs font-semibold text-slate-500 uppercase tracking-wider">Code</th>
-              <th className="px-5 py-3 text-left text-xs font-semibold text-slate-500 uppercase tracking-wider">Description</th>
-              <th className="px-5 py-3 text-left text-xs font-semibold text-slate-500 uppercase tracking-wider">Unit</th>
-              <th className="px-5 py-3 text-left text-xs font-semibold text-slate-500 uppercase tracking-wider">Current Price</th>
-              <th className="px-5 py-3 text-left text-xs font-semibold text-slate-500 uppercase tracking-wider">As of</th>
+            <tr className="text-xs text-gray-500 border-b bg-gray-50">
+              <th className="text-left px-4 py-3 font-medium">Product Code</th>
+              <th className="text-left px-4 py-3 font-medium">Description</th>
+              <th className="text-left px-4 py-3 font-medium">Unit</th>
+              <th className="text-right px-4 py-3 font-medium">Current Price</th>
+              <th className="text-left px-4 py-3 font-medium">Effective Date</th>
+              <th className="text-center px-4 py-3 font-medium">Status</th>
             </tr>
           </thead>
-          <tbody className="divide-y divide-slate-100">
-            {filtered.map(p => (
-              <tr key={p.prod_code} className="hover:bg-slate-50 transition-colors">
-                <td className="px-5 py-3 font-mono text-slate-700 font-medium">{p.prod_code}</td>
-                <td className="px-5 py-3 text-slate-700">{p.description}</td>
-                <td className="px-5 py-3 text-slate-500">{p.unit}</td>
-                <td className="px-5 py-3 text-slate-800 font-medium">
-                  {p.unit_Price != null ? '₱${parseFloat(p.unit_Price).toFixed(2)}' : '—'}
+          <tbody>
+            {loading ? (
+              <tr><td colSpan={6} className="text-center py-12 text-gray-400">Loading…</td></tr>
+            ) : data.length === 0 ? (
+              <tr><td colSpan={6} className="text-center py-12 text-gray-400">No data.</td></tr>
+            ) : data.map(r => (
+              <tr key={r.prod_code} className="border-b last:border-0 hover:bg-gray-50">
+                <td className="px-4 py-3 font-mono text-xs text-gray-500">{r.prod_code}</td>
+                <td className="px-4 py-3 text-gray-800">{r.description}</td>
+                <td className="px-4 py-3 text-gray-600">{r.unit}</td>
+                <td className="px-4 py-3 text-right font-medium text-gray-800">
+                  {r.unit_price != null ? `₱${Number(r.unit_price).toFixed(2)}` : <span className="text-gray-300">—</span>}
                 </td>
-                <td className="px-5 py-3 text-slate-400">{p.eff_Date ?? '—'}</td>
+                <td className="px-4 py-3 text-gray-500">{r.eff_date ?? '—'}</td>
+                <td className="px-4 py-3 text-center">
+                  <span className={`inline-flex px-2 py-0.5 rounded-full text-xs font-medium ${
+                    r.record_status === 'ACTIVE' ? 'bg-green-100 text-green-700' : 'bg-gray-100 text-gray-500'
+                  }`}>
+                    {r.record_status}
+                  </span>
+                </td>
               </tr>
             ))}
           </tbody>
         </table>
-        {filtered.length === 0 && (
-          <div className="text-center py-12 text-slate-400"><p className="text-sm">No results.</p></div>
-        )}
       </div>
     </div>
   );

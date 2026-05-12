@@ -24,7 +24,7 @@ export default function App() {
         <Route path="/reports" element={<ReportsPage />} />
         <Route path="/reports/top-selling" element={<TopSellingPage />} />
         <Route element={<AdminRoute />}>
-          <Route path="/deleted-items" element={<DeletedItemsPage />} />
+          <Route path="/deleted" element={<DeletedItemsPage />} />
           <Route path="/admin" element={<AdminPage />} />
         </Route>
       </Route>
