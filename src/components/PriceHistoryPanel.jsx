@@ -22,7 +22,7 @@ export default function PriceHistoryPanel({ prodCode }) {
   async function handleAdd(e) {
     e.preventDefault();
     setLoading(true);
-    await addPriceEntry({ prodCode, eff_date: form.eff_date, unit_price: parseFloat(form.unit_price), userId: currentUser.id });
+    await addPriceEntry({ prod_code, eff_date: form.eff_date, unit_price: parseFloat(form.unit_price), userId: currentUser.id });
     setShowForm(false);
     setForm({ eff_date:'', unit_price:'' });
     await load();
