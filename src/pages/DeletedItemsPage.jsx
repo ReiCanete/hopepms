@@ -4,7 +4,7 @@ import { useAuth } from '../context/AuthContext';
 import { parseStamp } from '../utils/stampHelper';
 
 export default function DeletedItemsPage() {
-  const { user } = useAuth();
+  const { currentUser: user } = useAuth();
   const [products, setProducts] = useState([]);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState('');

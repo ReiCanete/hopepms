@@ -3,7 +3,7 @@ import { addProduct } from '../services/productService';
 import { useAuth } from '../context/AuthContext';
 
 export default function AddProductModal({ onClose, onSuccess }) {
-  const { user } = useAuth();
+  const { currentUser: user } = useAuth();
   const [description, setDescription] = useState('');
   const [unit, setUnit] = useState('');
   const [loading, setLoading] = useState(false);
