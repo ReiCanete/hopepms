@@ -1,4 +1,4 @@
-import { createContext, useContext, useEffect, useState } from 'react';
+import { createContext, useContext, useEffect, useRef, useState } from 'react';
 import { supabase } from '../lib/supabaseClient';
 
 const AuthContext = createContext(null);
@@ -6,6 +6,7 @@ const AuthContext = createContext(null);
 export function AuthProvider({ children }) {
   const [currentUser, setCurrentUser] = useState(null);
   const [loading, setLoading] = useState(true);
+  const safetyRef = useRef(null);
 
   useEffect(() => {
     const { data: listener } = supabase.auth.onAuthStateChange(async (event, session) => {
@@ -14,7 +15,6 @@ export function AuthProvider({ children }) {
 
       if (session?.user) {
         try {
-          // Race the query against a 5 second timeout
           const userRowPromise = supabase
             .from('app_user')
             .select('record_status, user_type, username, first_name, last_name')
@@ -22,7 +22,7 @@ export function AuthProvider({ children }) {
             .single();
 
           const timeoutPromise = new Promise((_, reject) =>
-            setTimeout(() => reject(new Error('Query timeout')), 5000)
+            setTimeout(() => reject(new Error('Query timeout')), 15000)
           );
 
           const { data: userRow, error } = await Promise.race([userRowPromise, timeoutPromise]);
@@ -31,16 +31,16 @@ export function AuthProvider({ children }) {
           console.log('ERROR:', error);
 
           if (error || !userRow || userRow.record_status !== 'ACTIVE') {
-            console.log('Signing out — no active row or error');
             await supabase.auth.signOut();
             setCurrentUser(null);
           } else {
+            // Cancel safety timeout — auth resolved successfully
+            clearTimeout(safetyRef.current);
             setCurrentUser({ ...session.user, ...userRow });
           }
         } catch (err) {
           console.log('CAUGHT ERROR:', err.message);
-          await supabase.auth.signOut();
-          setCurrentUser(null);
+          // Don't sign out on timeout — another event may succeed
         }
       } else {
         setCurrentUser(null);
@@ -49,14 +49,13 @@ export function AuthProvider({ children }) {
       setLoading(false);
     });
 
-    // Safety net — if onAuthStateChange never fires, unblock the UI after 8s
-    const safetyTimeout = setTimeout(() => {
+    safetyRef.current = setTimeout(() => {
       console.log('Safety timeout fired');
       setLoading(false);
-    }, 8000);
+    }, 20000);
 
     return () => {
-      clearTimeout(safetyTimeout);
+      clearTimeout(safetyRef.current);
       listener?.subscription?.unsubscribe();
     };
   }, []);
