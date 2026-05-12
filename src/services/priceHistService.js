@@ -1,4 +1,4 @@
-import { supabase } from '../supabaseClient';
+import { supabase } from '../lib/supabaseClient';
 import { makeStamp } from '../utils/stampHelper';
 
 // ── Fetch price history for a product ────────────────────────────────────────

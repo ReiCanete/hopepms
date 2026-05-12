@@ -1,4 +1,4 @@
-import { supabase } from '../supabaseClient';
+import { supabase } from '../lib/supabaseClient';
 import { makeStamp } from '../utils/stampHelper';
 
 // ── Fetch all ACTIVE products with current price (from view) ──────────────────

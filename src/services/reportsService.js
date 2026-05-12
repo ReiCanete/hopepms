@@ -1,4 +1,4 @@
-import { supabase } from '../supabaseClient';
+import { supabase } from '../lib/supabaseClient';
 
 // ── Fetch all products with current price for reports ─────────────────────────
 export async function fetchReportData() {
